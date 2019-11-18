@@ -9,12 +9,12 @@ import time
 WINDOW_TITLE = "Game of Life"
 WINDOW_WIDTH = 600
 WINDOW_HEIGHT = 600
-SCALE = 8 
+SCALE = 8
 
 D_WIDTH = int(WINDOW_WIDTH / SCALE)
 D_HEIGHT = int(WINDOW_HEIGHT / SCALE)
 
-FRAME_RATE = 5     # how many frames to display per second
+FRAME_RATE = 1     # how many frames to display per second
 TIMESTEP = 1.0 / FRAME_RATE    # how often to refresh the frame
 
 FILL_SEED_CHANCE = 0.15
@@ -28,9 +28,8 @@ window.resizable(False, False)
 
 #CELL_UPDATE_ENUM
 class CellUpdate(Enum):
-    KEEP = 1
-    KILL = 2
-    NEW = 3
+    KILL = 1
+    NEW = 2
 
 #DISPLAY CLASS
 class Display:
@@ -38,7 +37,7 @@ class Display:
     def __init__(self, load):
 
         self.RUNNING = True
-        self.GS_PAUSE = True
+        self.GS_PAUSE = False
 
         self.point_list = []
         self.update_list = []
@@ -94,22 +93,28 @@ class Display:
         print("clicked right at", event.x, event.y)
 
     def pause(self, event):
+        if self.GS_PAUSE == True:
+            print("=======Unpaused=======")
+        else:
+            print("=======Paused=======")
         self.GS_PAUSE = not self.GS_PAUSE
+        
 
     def get_num_nei(self, point):
         miny = point[0] - 1 if point[0] - 1 >= 0 else 0
-        maxy = point[0] + 1 if point[0] + 1 <= WINDOW_HEIGHT - 1 else WINDOW_HEIGHT - 1
+        maxy = point[0] + 1 if point[0] + 1 <= D_HEIGHT - 1 else D_HEIGHT - 1
         minx = point[1] - 1 if point[1] - 1 >= 0 else 0
-        maxx = point[1] + 1 if point[1] + 1 <= WINDOW_WIDTH - 1 else WINDOW_WIDTH - 1
+        maxx = point[1] + 1 if point[1] + 1 <= D_WIDTH - 1 else D_WIDTH - 1
 
         nn = 0
 
         y = miny
-        x = minx
-        
         while y <= maxy:
+            x = minx
             while x <= maxx:
-                if y != point[0] and x != point[1]:
+                if y == point[0] and x == point[1]:
+                    pass
+                else:
                     if self.data[y][x] == 255:
                         nn = nn + 1
                 x = x + 1
@@ -118,20 +123,60 @@ class Display:
         return nn
 
     def check_point(self, point):
-        #check individual point
-        #add to checked list
-        #add to update list
-        #check all neighbors
-        #add all neighbors to checked list
-        #add all neighbors to update list
-        
-        pass
+        if point not in self.checked_list:
+    
+            nn = self.get_num_nei(point)
+            pv = self.data[point[0]][point[1]]        
 
+            if pv == 255:
+                if nn < 2:
+                    self.update_list.append((point, CellUpdate.KILL))
+                elif nn > 3:
+                    self.update_list.append((point, CellUpdate.KILL))
+            elif pv == 0:
+                if nn == 3:
+                    self.update_list.append((point, CellUpdate.NEW))
+            self.checked_list.append(point)
+
+    def check_nei(self, point):
+        miny = point[0] - 1 if point[0] - 1 >= 0 else 0
+        maxy = point[0] + 1 if point[0] + 1 <= D_HEIGHT - 1 else D_HEIGHT - 1
+        minx = point[1] - 1 if point[1] - 1 >= 0 else 0
+        maxx = point[1] + 1 if point[1] + 1 <= D_WIDTH - 1 else D_WIDTH - 1
+
+        y = miny
+        while y <= maxy:
+            x = minx
+            while x <= maxx:
+                if y == point[0] and x == point[1]:
+                    pass
+                else:
+                    self.check_point((y,x))
+                x = x + 1
+            y = y + 1
         
+    def update_points(self):
+        for op in self.update_list:
+            point = op[0]
+            operation = op[1]
+
+            if operation == CellUpdate.KILL:
+                self.data[point[0]][point[1]] = 0
+                if point in self.point_list:
+                    self.point_list.remove(point)
+            elif operation == CellUpdate.NEW:
+                self.data[point[0]][point[1]] = 255
+                if point not in self.point_list:
+                    self.point_list.append(point)
+
+
     def affect(self):
         for point in self.point_list:
             self.check_point(point)
-
+            self.check_nei(point)
+        self.update_points()
+        self.checked_list.clear()
+        self.update_list.clear()
 
     def render(self):
 
@@ -152,8 +197,9 @@ current_time = time.time()
 accumulator = 0.0
 
 while display.RUNNING:
-
     if not display.GS_PAUSE:
+
+
         new_time = time.time()
         frame_time = new_time - current_time
         current_time = new_time
