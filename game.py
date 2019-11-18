@@ -9,12 +9,12 @@ import time
 WINDOW_TITLE = "Game of Life"
 WINDOW_WIDTH = 600
 WINDOW_HEIGHT = 600
-SCALE = 8
+SCALE = 12
 
 D_WIDTH = int(WINDOW_WIDTH / SCALE)
 D_HEIGHT = int(WINDOW_HEIGHT / SCALE)
 
-FRAME_RATE = 1     # how many frames to display per second
+FRAME_RATE = 5     # how many frames to display per second
 TIMESTEP = 1.0 / FRAME_RATE    # how often to refresh the frame
 
 FILL_SEED_CHANCE = 0.15
@@ -37,7 +37,7 @@ class Display:
     def __init__(self, load):
 
         self.RUNNING = True
-        self.GS_PAUSE = False
+        self.GS_PAUSE = True
 
         self.point_list = []
         self.update_list = []
@@ -197,20 +197,15 @@ current_time = time.time()
 accumulator = 0.0
 
 while display.RUNNING:
-    if not display.GS_PAUSE:
-
-
-        new_time = time.time()
-        frame_time = new_time - current_time
-        current_time = new_time
-
-        accumulator = accumulator + frame_time
-
-        while accumulator >= TIMESTEP:
+    new_time = time.time()
+    frame_time = new_time - current_time
+    current_time = new_time
+    accumulator = accumulator + frame_time
+    while accumulator >= TIMESTEP:
+        if not display.GS_PAUSE:
             display.tick()
-            accumulator = accumulator - TIMESTEP
-
-        alpha = accumulator/ TIMESTEP
+        accumulator = accumulator - TIMESTEP
+    alpha = accumulator/ TIMESTEP
 
     window.update_idletasks()
     window.update()
